@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "top.shenjack.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"MixinNoiseSampler"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}
