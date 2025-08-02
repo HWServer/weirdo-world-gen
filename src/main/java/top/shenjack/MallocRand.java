@@ -55,18 +55,21 @@ public class MallocRand {
         return this.buffer[this.counter++];
     }
 
+    static int block_pos_to_index(int x, int y, int z) {
+        x &= 15;
+        y &= 127;
+        z &= 15;
+        return x + (y * 16) + (z * 16 * 128);
+    }
+
+    /**
+     * by horizen beta (openAI的新模型)
+     */
     public double sample_pos(int x, int y, int z) {
         if (this.address == 0) {
             this.refresh();
         }
-        // Normalize coordinates into valid ranges
-        x = ((x % 16) + 16) % 16;
-        y = ((y % 128) + 128) % 128;
-        z = ((z % 16) + 16) % 16;
-
-        // Compute linear index in a 16 (x) x 128 (y) x 16 (z) layout
-        // Ensure we read within the current buffer batch, refresh if needed.
-        int idx = x + (y * 16) + (z * 16 * 128);
+        int idx = block_pos_to_index(x, y, z);
 
         // If the computed index exceeds the current buffer size, refresh to a new batch
         // and fold the index into the current buffer range.
@@ -80,23 +83,37 @@ public class MallocRand {
     }
 
     /**
-     * 从当前缓冲区采样一个整数，并将其映射到 [min, max] 范围（包含端点）。
-     * 如果 min > max 将会自动交换。
+     * 从当前缓冲区采样一个整数，并将其映射到 [0, max] 范围（包含端点）。
+     * by horizen beta (openAI的新模型)
      */
-    public int sampleIntInRange(int min, int max) {
-        if (min > max) {
-            int t = min;
-            min = max;
-            max = t;
-        }
-        if (this.counter >= MALLOC_BATCH_SIZE) {
-            this.refresh();
-            this.counter = 0;
+    public int sample_int_in_range(int max) {
+        if (max < 0) {
+            max = 0;
         }
         // 读取一个字节并转为无符号 0..255
         int unsigned = this.buffer[this.counter++] & 0xFF;
-        int range = max - min + 1;
-        // 使用取模将 0..255 映射到 0..range-1，再平移到 min..max
-        return min + (unsigned % range);
+        int range = max + 1;
+        // 使用取模将 0..255 映射到 0..max
+        return unsigned % range;
+    }
+
+    /**
+     * 类似于 sample_pos，在指定的 (x, y, z) 位置采样一个整数，
+     * 并将其映射到 [0, max] 范围（包含端点）。
+     * by horizen beta (openAI的新模型)
+     */
+    public int sample_int_in_range_pos(int x, int y, int z, int max) {
+        if (max < 0) {
+            max = 0;
+        }
+        if (this.address == 0) {
+            this.refresh();
+        }
+        int idx = block_pos_to_index(x, y, z);
+
+        // 按字节读取并映射到 [0, max]
+        int unsigned = this.buffer[idx] & 0xFF;
+        int range = max + 1;
+        return unsigned % range;
     }
 }
