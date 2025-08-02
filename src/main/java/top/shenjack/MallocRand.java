@@ -3,6 +3,7 @@ package top.shenjack;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 
 @SuppressWarnings("All")
 public class MallocRand {
@@ -42,8 +43,25 @@ public class MallocRand {
     }
 
     private void readBytes() {
+        byte min = Byte.MAX_VALUE;
+        byte max = Byte.MIN_VALUE;
+
         for (int i = 0; i < MALLOC_BATCH_SIZE; i++) {
-            buffer[i] = this.unsafe.getByte(address + i);
+            byte v = unsafe.getByte(address + i);
+            buffer[i] = v;
+            if (v < min) min = v;
+            if (v > max) max = v;
+        }
+
+        int range = max - min;
+        if (range == 0) {
+            Arrays.fill(buffer, (byte) 0);
+            return;
+        }
+
+        for (int i = 0; i < MALLOC_BATCH_SIZE; i++) {
+            int normalized = ((buffer[i] - min) * 255) / range;
+            buffer[i] = (byte) normalized;
         }
     }
 

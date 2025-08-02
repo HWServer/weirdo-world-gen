@@ -24,17 +24,14 @@ public abstract class MixinNoiseSampler {
 
     @ModifyArg(method = "method_40530", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/gen/chunk/AquiferSampler;apply(Lnet/minecraft/world/gen/densityfunction/DensityFunction$NoisePos;D)Lnet/minecraft/block/BlockState;"))
     private double mallocSample(DensityFunction.NoisePos pos, double sample) {
-        if ((pos.blockZ() & 15) != 0 || WeirdoWorldGen.fullyMalloc) {
+        if (((pos.blockZ() & 15) != 0 || WeirdoWorldGen.fullyMalloc) && !(pos.blockY() > 200)) {
             int x = pos.blockX();
             int y = pos.blockY();
             int z = pos.blockZ();
-            if (this.random.sample_int_in_range_pos(x, y, z, 5) != 0) {
+            if (this.random.sample_int_in_range_pos(x, y + 1, z, 3) != 0) {
                 return 0;
             }
-            if (this.random.sample_int_in_range_pos(x, y, z, 3) != 0) {
-                return 0;
-            }
-            return this.random.sample() * 2.0 - 1.0;
+            return this.random.sample() * 2.0D - 1.0D;
         }
         return sample;
     }
